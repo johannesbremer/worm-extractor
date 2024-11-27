@@ -1,0 +1,7 @@
+/extractions
+/parsed_entry_files
+descriptions.txt
+filenames.txt
+*.bin
+*.wd2
+*.wdf
