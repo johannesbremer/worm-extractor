@@ -3,4 +3,6 @@
 *.bin
 *.wd2
 *.wdf
+*.WDF
+*.SAV
 tmp.json
