@@ -39,7 +39,7 @@ def main [
             | take $blobend
 
         $entryblob | save tmp.bin
-        binwalk tmp.bin -qe -l tmp.json
+        binwalk --quiet --extract --log tmp.json tmp.bin
         let binwalklog = open tmp.json
         rm tmp.json tmp.bin 
         if (ls extractions | where name == extractions/tmp.bin | length) == 1 {
