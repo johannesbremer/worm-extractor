@@ -1,5 +1,6 @@
 /extractions
-/parsed_entry_files
+/content
 *.bin
 *.wd2
 *.wdf
+tmp.json
