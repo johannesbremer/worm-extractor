@@ -16,7 +16,7 @@ def main [
         rm -r extractions
     }
 
-    let $cuts = strings $filename -t d
+    let $cuts = strings --radix=d $filename
         | lines
         | where (str contains 'CG PACS FILE HEADER Version 1')
         | str replace ' CG PACS FILE HEADER Version 1' ''
@@ -55,7 +55,7 @@ def main [
         }
 
         let $header = $entryblob | take $headerend | strings | lines
-        let extractionpath = $"extractions/tmp.bin.extracted"
+        let extractionpath = "extractions/tmp.bin.extracted"
 
         let jpg = $header | where (str contains ".jpg")
         if ($jpg | length) != 0 {
@@ -91,7 +91,7 @@ def main [
             rm --recursive $extractionpath
         }
     }
-    rm -r extractions/
+    rm --recursive extractions/
     let joinedfile = $filenames | wrap filenames | merge ($descriptions | wrap descriptions)
     $joinedfile | print
 }
