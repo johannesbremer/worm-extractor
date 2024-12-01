@@ -6,14 +6,11 @@ def main [
 
     mkdir content
 
-    if (ls | where name == tmp.json | length) == 1 {
-        rm tmp.json
-    }
-    if (ls | where name == tmp.bin | length) == 1 {
-        rm tmp.bin
-    }
     if (ls | where name == extractions | length) == 1 {
-        rm -r extractions
+        rm --recursive extractions/
+    }
+    if (ls | where name == stdin | length) == 1 {
+        rm --recursive stdin/
     }
 
     let $cuts = strings --radix=d $filename
@@ -38,15 +35,14 @@ def main [
             | skip ($cuts | get ($entry - 1))
             | take $blobend
 
-        $entryblob | save tmp.bin
-        binwalk --quiet --extract --log tmp.json tmp.bin
-        let binwalklog = open tmp.json
-        rm tmp.json tmp.bin 
-        if (ls extractions | where name == extractions/tmp.bin | length) == 1 {
-            rm extractions/tmp.bin
-        }
-
-        let $contentstart = $binwalklog | get Analysis | get file_map | first | get offset
+        let contentstart = $entryblob 
+            | ./binwalk --extract --stdin --quiet --log - 
+            | from json 
+            | get Analysis 
+            | get file_map 
+            | first 
+            | get offset
+        
         mut headerend = 0
         if ($contentstart | length) > 0 {
             $headerend = $contentstart | first
@@ -55,7 +51,7 @@ def main [
         }
 
         let $header = $entryblob | take $headerend | strings | lines
-        let extractionpath = "extractions/tmp.bin.extracted"
+        let extractionpath = "extractions/stdin.extracted"
 
         let jpg = $header | where (str contains ".jpg")
         if ($jpg | length) != 0 {
@@ -90,8 +86,9 @@ def main [
         if (ls extractions | where name == $extractionpath | length) == 1 {
             rm --recursive $extractionpath
         }
+        rm --recursive extractions/ # remove after 
     }
-    rm --recursive extractions/
+    # rm --recursive extractions/
     let joinedfile = $filenames | wrap filenames | merge ($descriptions | wrap descriptions)
     $joinedfile | print
 }
