@@ -12,18 +12,21 @@ def main [
     if (ls | where name == stdin | length) == 1 {
         rm --recursive stdin/
     }
-    mkdir extractions/
+    if (ls | where name == content | length) == 1 {
+        rm --recursive content/
+    }
+    mkdir content/
 
-    let start = strings --radix=d $filename
+    let blob = open $filename
+    let blobsize = (ls $filename | get size | first) / 1B | into int
+
+    let start = $blob
+        | strings --radix=d
         | lines
         | where (str contains $headermarker)
         | str replace $headermarker ''
         | str replace --all ' ' ''
         | into int
-        | first 60
-
-    let blob = open $filename
-    let blobsize = (ls $filename | get size | first) / 1B | into int
 
     let cuts = $start 
         | wrap start 
@@ -41,7 +44,8 @@ def main [
             $blob
                 | skip ($entry.start + $minheaderlen)
                 | take ($entry.end - $entry.start)
-                |./binwalk --stdin --extract --threads 1 --directory $"extractions/($filetype)"
+                |./binwalk --stdin --quiet --extract --threads 1 --directory $"extractions/($filetype)"
+                | ignore
         }
 
         let filen = {
@@ -78,4 +82,23 @@ def main [
     
     let joinedfile = $filenames | merge $descriptions
     print $joinedfile
+
+    cd extractions/
+    ls | get name | each { |name|
+        cd $name
+        if (ls | length) == 2 {
+            cd stdin.extracted
+            if (ls | length) == 1 {
+                cd (ls | first | get name)
+                convert image.jpg $"../../../../content/($name).pdf"
+            } else if (ls | length) > 1 {
+                ls | get name | each { |dir|
+                    cd $dir
+                    convert image.jpg $"../($dir).pdf"
+                    cd ..
+                    pwd | print
+                }
+            }
+        }
+    } | ignore
 }
