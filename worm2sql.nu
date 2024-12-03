@@ -99,9 +99,6 @@ def main [
     }
     $fil | wrap filename | merge ($des |wrap description) | print
 
-    
-    let joinedfile = $metadata | wrap filename | update filename {print}
-
     cd extractions/
     ls | get name | par-each { |name|
         cd $name
@@ -118,7 +115,7 @@ def main [
                         | format date %s.%f
                     convert image.jpg $"../($filename).pdf"
                 }
-                pwd | print
+                qpdf --empty --pages *.pdf -- $"../../../content/($name).pdf"
             }
         }
     } | ignore
