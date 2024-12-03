@@ -76,15 +76,34 @@ def main [
         [$filen $descr]
     }   | flatten
         | where (is-not-empty)
+        
+    mut oscillator = true
+    mut fil = []
+    mut des = []
 
-    let $filenames = $metadata | every 2 | flatten
-    let $descriptions = $metadata | every 2 --skip | flatten
+    for entry in 0..(($metadata | length) - 1) {
+        let rec = $metadata | get $entry 
+        mut column = true
+        if ($rec | to nuon | str starts-with '{filename: ') {
+            $column = true
+        } else if ($rec | to nuon | str starts-with '{description: ') {
+            $column = false
+        }
+        if $oscillator and $column {
+            $fil = $fil | append $rec.filename
+            $oscillator = false
+        } else if ($oscillator == false) and ($column == false) {
+            $des = $des | append $rec.description
+            $oscillator = true
+        }
+    }
+    $fil | wrap filename | merge ($des |wrap description) | print
+
     
-    let joinedfile = $filenames | merge $descriptions
-    print $joinedfile
+    let joinedfile = $metadata | wrap filename | update filename {print}
 
     cd extractions/
-    ls | get name | each { |name|
+    ls | get name | par-each { |name|
         cd $name
         if (ls | length) == 2 {
             cd stdin.extracted
@@ -94,10 +113,12 @@ def main [
             } else if (ls | length) > 1 {
                 ls | get name | each { |dir|
                     cd $dir
-                    convert image.jpg $"../($dir).pdf"
-                    cd ..
-                    pwd | print
+                    let filename = ls
+                        | get modified
+                        | format date %s.%f
+                    convert image.jpg $"../($filename).pdf"
                 }
+                pwd | print
             }
         }
     } | ignore
